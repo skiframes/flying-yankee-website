@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flying Yankee - Live</title>
+    
+    <!-- HLS.js for video playback -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background: #111;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #222;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            font-size: 1.8rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #888;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .nav-links a.active {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .archive-btn {
+            background: #1a5fb4;
+            color: #fff !important;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .archive-btn:hover {
+            background: #1c71d8;
+        }
+
+        /* Main content */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        /* Video container */
+        .video-wrapper {
+            width: 100%;
+            max-width: 1280px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 aspect ratio */
+        }
+
+        video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        /* Live badge */
+        .live-badge {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: #e01b24;
+            color: #fff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            z-index: 10;
+        }
+
+        .live-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Offline state */
+        .offline-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+
+        .offline-overlay.hidden {
+            display: none;
+        }
+
+        .offline-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.6;
+        }
+
+        .offline-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .offline-subtext {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        /* Stream info */
+        .stream-info {
+            width: 100%;
+            max-width: 1280px;
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stream-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .stream-meta {
+            color: #888;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .stream-controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .control-btn {
+            background: #222;
+            border: none;
+            color: #fff;
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #333;
+        }
+
+        /* Status indicator */
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #888;
+        }
+
+        .status-dot.live {
+            background: #2ec27e;
+        }
+
+        .status-dot.connecting {
+            background: #f5c211;
+            animation: pulse 1s infinite;
+        }
+
+        .status-dot.offline {
+            background: #c01c28;
+        }
+
+        /* Footer */
+        footer {
+            background: #111;
+            padding: 1rem 2rem;
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+            border-top: 1px solid #222;
+        }
+
+        footer a {
+            color: #888;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: #fff;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 1rem;
+            }
+
+            .logo {
+                font-size: 1.2rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            main {
+                padding: 1rem;
+            }
+
+            .stream-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .stream-controls {
+                width: 100%;
+            }
+
+            .control-btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">
+            <span class="logo-icon">⛷️</span>
+            Flying Yankee
+        </a>
+        <nav class="nav-links">
+            <a href="/live/" class="active">Live</a>
+            <a href="/" class="archive-btn">📁 Archive</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="video-wrapper">
+            <div class="video-container">
+                <div class="live-badge">Live</div>
+                <video id="video" controls playsinline></video>
+                <div id="offline-overlay" class="offline-overlay">
+                    <div class="offline-icon">📡</div>
+                    <div class="offline-text">Stream Offline</div>
+                    <div class="offline-subtext">Check back during race times (8am - 4pm EST)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stream-info">
+            <div>
+                <div class="stream-title">Ragged Mountain Ski Racing</div>
+                <div class="stream-meta">Live from Ragged Mountain, New Hampshire</div>
+            </div>
+            <div class="stream-controls">
+                <div class="status">
+                    <span id="status-dot" class="status-dot connecting"></span>
+                    <span id="status-text">Connecting...</span>
+                </div>
+                <button class="control-btn" onclick="toggleFullscreen()">
+                    ⛶ Fullscreen
+                </button>
+                <button class="control-btn" onclick="copyStreamUrl()">
+                    🔗 Share
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Flying Yankee Video Analytics • <a href="/">flying-yankee.com</a></p>
+    </footer>
+
+    <script>
+        const video = document.getElementById('video');
+        const offlineOverlay = document.getElementById('offline-overlay');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const liveBadge = document.querySelector('.live-badge');
+
+        const streamUrl = 'https://vwgvyk.egress.t7c7zl.mediapackagev2.us-east-1.amazonaws.com/out/v1/channel-group-FY/channel-FY/standard-hls/manifest.m3u8';
+        
+        let hls = null;
+        let retryCount = 0;
+        const maxRetries = 5;
+        const retryDelay = 5000; // 5 seconds
+
+        function updateStatus(status, text) {
+            statusDot.className = 'status-dot ' + status;
+            statusText.textContent = text;
+            
+            if (status === 'live') {
+                offlineOverlay.classList.add('hidden');
+                liveBadge.style.display = 'flex';
+            } else if (status === 'offline') {
+                offlineOverlay.classList.remove('hidden');
+                liveBadge.style.display = 'none';
+            }
+        }
+
+        function initPlayer() {
+            updateStatus('connecting', 'Connecting...');
+
+            if (Hls.isSupported()) {
+                if (hls) {
+                    hls.destroy();
+                }
+                
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: false,
+                    backBufferLength: 90
+                });
+
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    updateStatus('live', 'Live');
+                    retryCount = 0;
+                    video.play().catch(e => {
+                        // Autoplay blocked, user needs to click
+                        console.log('Autoplay blocked, click to play');
+                    });
+                });
+
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    console.log('HLS error:', data);
+                    
+                    if (data.fatal) {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                updateStatus('offline', 'Stream offline');
+                                scheduleRetry();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                updateStatus('offline', 'Stream error');
+                                scheduleRetry();
+                                break;
+                        }
+                    }
+                });
+
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari native HLS support
+                video.src = streamUrl;
+                video.addEventListener('loadedmetadata', function() {
+                    updateStatus('live', 'Live');
+                    video.play();
+                });
+                video.addEventListener('error', function() {
+                    updateStatus('offline', 'Stream offline');
+                    scheduleRetry();
+                });
+            } else {
+                updateStatus('offline', 'Browser not supported');
+            }
+        }
+
+        function scheduleRetry() {
+            if (retryCount < maxRetries) {
+                retryCount++;
+                updateStatus('connecting', `Retrying (${retryCount}/${maxRetries})...`);
+                setTimeout(initPlayer, retryDelay);
+            } else {
+                updateStatus('offline', 'Stream offline');
+                // Keep trying every 30 seconds
+                setTimeout(() => {
+                    retryCount = 0;
+                    initPlayer();
+                }, 30000);
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                video.requestFullscreen().catch(err => {
+                    console.log('Fullscreen error:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function copyStreamUrl() {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                alert('Link copied to clipboard!');
+            }).catch(() => {
+                prompt('Copy this link:', window.location.href);
+            });
+        }
+
+        // Initialize player on load
+        initPlayer();
+
+        // Visibility change - reconnect when tab becomes visible
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && statusDot.classList.contains('offline')) {
+                retryCount = 0;
+                initPlayer();
+            }
+        });
+    </script>
+</body>
+</html>
