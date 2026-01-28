@@ -83,7 +83,7 @@ PRESET_BITRATE[medium]=1200
 PRESET_BITRATE[high]=3500
 PRESET_BITRATE[ultra]=7000
 
-PRESET_ORDER=("low" "medium" "high" "ultra")
+PRESET_ORDER=("low" "medium" "high")
 
 set_quality_preset() {
     case "$1" in
@@ -286,9 +286,7 @@ adaptive_stream() {
     
     # Determine starting quality
     local current_preset="medium"
-    if (( initial_speed >= 12000 )); then
-        current_preset="ultra"
-    elif (( initial_speed >= 6000 )); then
+    if (( initial_speed >= 6000 )); then
         current_preset="high"
     elif (( initial_speed >= 2500 )); then
         current_preset="medium"
