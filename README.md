@@ -76,15 +76,6 @@ ssh j40@J40 "chmod +x ~/bin/start_live_stream.sh"
 - Primary: `192.168.0.101`
 - Fallback: `192.168.0.103`
 
-## AWS Resources
-
-| Service | Resource |
-|---------|----------|
-| S3 Bucket | `flying-yankee-live` |
-| CloudFront | `d80wup0l69q45.cloudfront.net` |
-| MediaPackage | `channel-group-FY/channel-FY` |
-| MediaLive | RTMP input at `44.215.230.146:1935` |
-
 ## Development with Claude
 
 This repository is designed to work with Claude for AI-assisted development:
@@ -93,10 +84,3 @@ This repository is designed to work with Claude for AI-assisted development:
 2. Claude can help modify the HTML/CSS/JS or streaming scripts
 3. Run `./scripts/deploy.sh` to publish website changes
 4. Copy streaming scripts to Jetson manually
-
-## Stream Configuration
-
-The live player connects to MediaPackage at:
-```
-https://vwgvyk.egress.t7c7zl.mediapackagev2.us-east-1.amazonaws.com/out/v1/channel-group-FY/channel-FY/standard-hls/manifest.m3u8
-```
